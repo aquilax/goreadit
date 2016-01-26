@@ -25,6 +25,7 @@ func (t *Tokenizer) Process(fileName string) error {
 }
 
 func (t *Tokenizer) process(reader io.Reader) error {
+	// TODO: Use proper training data
 	training := sentences.NewStorage()
 	tokenizer := sentences.NewSentenceTokenizer(training)
 	text, err := ioutil.ReadAll(reader)
