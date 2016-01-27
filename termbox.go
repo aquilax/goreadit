@@ -3,11 +3,12 @@ package main
 import "github.com/nsf/termbox-go"
 
 type Termbox struct {
-	input   *Input
-	width   int
-	height  int
-	centerX int
-	centerY int
+	input       *Input
+	currentWord string
+	width       int
+	height      int
+	centerX     int
+	centerY     int
 }
 
 func NewTermbox() *Termbox {
@@ -16,7 +17,7 @@ func NewTermbox() *Termbox {
 	}
 }
 
-func (t *Termbox) Run() error {
+func (t *Termbox) Run(tokenizer *Tokenizer) error {
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
@@ -38,9 +39,9 @@ mainloop:
 			} else if ev.Type == termbox.EventError {
 				panic(ev.Err.Error())
 			}
-			t.update(ev)
+			t.update(ev, tokenizer)
 		default:
-			t.update(termbox.Event{Type: termbox.EventNone})
+			t.update(termbox.Event{Type: termbox.EventNone}, tokenizer)
 		}
 		t.draw()
 	}
@@ -52,17 +53,20 @@ func (t *Termbox) updateSize(w, h int) {
 	t.height = h
 	t.centerX = t.width / 2
 	t.centerY = t.height / 2
-
 }
 
-func (t *Termbox) update(ev termbox.Event) {
-
+func (t *Termbox) update(ev termbox.Event, tokenizer *Tokenizer) {
+	if ev.Type == termbox.EventNone {
+		if word, ok := tokenizer.getNextWord(); ok {
+			t.currentWord = word
+		}
+	}
 }
 
 func (t *Termbox) draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	t.renderWireframe()
-	t.renderWord("килиманджаро")
+	t.renderWord(t.currentWord)
 	termbox.Flush()
 }
 

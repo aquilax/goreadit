@@ -13,5 +13,5 @@ func (r *ReadIt) Run() error {
 	if err := tokenizer.Process(r.config.FileName); err != nil {
 		return err
 	}
-	return NewTermbox().Run()
+	return NewTermbox().Run(tokenizer)
 }

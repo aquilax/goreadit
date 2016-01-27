@@ -4,12 +4,16 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/neurosnap/sentences"
 )
 
 type Tokenizer struct {
-	sentences []*sentences.Sentence
+	sentences       []*sentences.Sentence
+	currentSentence []string
+	sentenceId      int
+	wordId          int
 }
 
 func NewTokenizer() *Tokenizer {
@@ -17,6 +21,8 @@ func NewTokenizer() *Tokenizer {
 }
 
 func (t *Tokenizer) Process(fileName string) error {
+	t.sentenceId = 0
+	t.wordId = 0
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err
@@ -33,5 +39,29 @@ func (t *Tokenizer) process(reader io.Reader) error {
 		return err
 	}
 	t.sentences = tokenizer.Tokenize(string(text))
+	if len(t.sentences) > 0 {
+		t.currentSentence = t.processSentence(t.sentences[t.sentenceId].String())
+	}
 	return nil
+}
+
+func (t *Tokenizer) processSentence(text string) []string {
+	return strings.Fields(text)
+}
+
+func (t *Tokenizer) getNextWord() (string, bool) {
+	t.wordId++
+	if len(t.currentSentence) == t.wordId {
+		t.sentenceId++
+		if len(t.sentences) == t.sentenceId {
+			return "", false
+		}
+		sentence := strings.TrimSpace(t.sentences[t.sentenceId].Text)
+		if sentence == "" {
+			return "", false
+		}
+		t.currentSentence = t.processSentence(t.sentences[t.sentenceId].Text)
+		t.wordId = 0
+	}
+	return t.currentSentence[t.wordId], true
 }
