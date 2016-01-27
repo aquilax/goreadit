@@ -1,9 +1,21 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/nsf/termbox-go"
+)
+
+type appState int8
+
+const (
+	wpmStep = 10
+
+	stateRunning appState = iota
+	statePause
 )
 
 type Termbox struct {
@@ -13,11 +25,15 @@ type Termbox struct {
 	height      int
 	centerX     int
 	centerY     int
+	wpm         int
+	state       appState
 }
 
 func NewTermbox() *Termbox {
 	return &Termbox{
 		input: NewInput(),
+		wpm:   400,
+		state: statePause,
 	}
 }
 
@@ -48,7 +64,7 @@ mainloop:
 			t.update(termbox.Event{Type: termbox.EventNone}, tokenizer)
 		}
 		t.draw()
-		time.Sleep(time.Minute / 400)
+		time.Sleep(time.Minute / time.Duration(t.wpm))
 	}
 	return nil
 }
@@ -61,6 +77,24 @@ func (t *Termbox) updateSize(w, h int) {
 }
 
 func (t *Termbox) update(ev termbox.Event, tokenizer *Tokenizer) {
+	if ev.Type == termbox.EventKey {
+		if ev.Key == termbox.KeyArrowLeft {
+			t.wpm -= wpmStep
+		}
+		if ev.Key == termbox.KeyArrowRight {
+			t.wpm += wpmStep
+		}
+		if ev.Key == termbox.KeySpace {
+			if t.state == statePause {
+				t.state = stateRunning
+			} else {
+				t.state = statePause
+			}
+		}
+	}
+	if t.state == statePause {
+		return
+	}
 	if ev.Type == termbox.EventNone {
 		if word, ok := tokenizer.getNextWord(); ok {
 			t.currentWord = word
@@ -72,6 +106,7 @@ func (t *Termbox) draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	t.renderWireframe()
 	t.renderWord(t.currentWord)
+	t.renderWpm(t.wpm)
 	termbox.Flush()
 }
 
@@ -86,8 +121,7 @@ func (t *Termbox) renderWireframe() {
 }
 
 func (t *Termbox) renderWord(word string) {
-	//length := utf8.RuneCountInString(word)
-	breakingPoint := 2 // TODO: calculate that
+	breakingPoint := t.getBreakingPoint(word)
 	i := 0
 	for _, runeValue := range word {
 		x := t.centerX - breakingPoint + i
@@ -98,4 +132,29 @@ func (t *Termbox) renderWord(word string) {
 		termbox.SetCell(x, t.centerY, runeValue, color, termbox.ColorWhite)
 		i++
 	}
+}
+
+func (t *Termbox) renderWpm(wpm int) {
+	str := fmt.Sprintf("WPM: %d, Ctrl-C to exit, space to pause", wpm)
+	startX := 1
+	for i, runeValue := range str {
+		termbox.SetCell(startX+i, t.height-1, runeValue, termbox.ColorWhite, termbox.ColorDefault)
+	}
+}
+
+func (t *Termbox) getBreakingPoint(word string) int {
+	word = strings.ToLower(word)
+	vowels := "aeiouyаъоуеиюя"
+	i := 0
+	for _, runeValue := range word {
+		if i == 0 {
+			i++
+			continue
+		}
+		if strings.IndexRune(vowels, runeValue) != -1 {
+			return i
+		}
+		i++
+	}
+	return utf8.RuneCountInString(word) / 2
 }
