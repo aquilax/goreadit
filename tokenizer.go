@@ -14,6 +14,7 @@ type Tokenizer struct {
 	currentSentence []string
 	sentenceId      int
 	wordId          int
+	finished        bool
 }
 
 func NewTokenizer() *Tokenizer {
@@ -23,6 +24,7 @@ func NewTokenizer() *Tokenizer {
 func (t *Tokenizer) Process(fileName string) error {
 	t.sentenceId = 0
 	t.wordId = 0
+	t.finished = false
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err
@@ -50,6 +52,9 @@ func (t *Tokenizer) processSentence(text string) []string {
 }
 
 func (t *Tokenizer) getNextWord() (string, bool) {
+	if t.finished {
+		return "", false
+	}
 	t.wordId++
 	if len(t.currentSentence) == t.wordId {
 		t.sentenceId++
@@ -58,6 +63,7 @@ func (t *Tokenizer) getNextWord() (string, bool) {
 		}
 		sentence := strings.TrimSpace(t.sentences[t.sentenceId].Text)
 		if sentence == "" {
+			t.finished = true
 			return "", false
 		}
 		t.currentSentence = t.processSentence(t.sentences[t.sentenceId].Text)

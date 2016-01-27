@@ -1,6 +1,10 @@
 package main
 
-import "github.com/nsf/termbox-go"
+import (
+	"time"
+
+	"github.com/nsf/termbox-go"
+)
 
 type Termbox struct {
 	input       *Input
@@ -44,6 +48,7 @@ mainloop:
 			t.update(termbox.Event{Type: termbox.EventNone}, tokenizer)
 		}
 		t.draw()
+		time.Sleep(time.Minute / 400)
 	}
 	return nil
 }
