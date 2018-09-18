@@ -12,8 +12,8 @@ import (
 type Tokenizer struct {
 	sentences       []*sentences.Sentence
 	currentSentence []string
-	sentenceId      int
-	wordId          int
+	sentenceID      int
+	wordID          int
 	finished        bool
 }
 
@@ -22,8 +22,8 @@ func NewTokenizer() *Tokenizer {
 }
 
 func (t *Tokenizer) Process(fileName string) error {
-	t.sentenceId = 0
-	t.wordId = 0
+	t.sentenceID = 0
+	t.wordID = 0
 	t.finished = false
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -42,7 +42,7 @@ func (t *Tokenizer) process(reader io.Reader) error {
 	}
 	t.sentences = tokenizer.Tokenize(string(text))
 	if len(t.sentences) > 0 {
-		t.currentSentence = t.processSentence(t.sentences[t.sentenceId].String())
+		t.currentSentence = t.processSentence(t.sentences[t.sentenceID].String())
 	}
 	return nil
 }
@@ -55,19 +55,19 @@ func (t *Tokenizer) getNextWord() (string, bool) {
 	if t.finished {
 		return "", false
 	}
-	t.wordId++
-	if len(t.currentSentence) == t.wordId {
-		t.sentenceId++
-		if len(t.sentences) == t.sentenceId {
+	t.wordID++
+	if len(t.currentSentence) == t.wordID {
+		t.sentenceID++
+		if len(t.sentences) == t.sentenceID {
 			return "", false
 		}
-		sentence := strings.TrimSpace(t.sentences[t.sentenceId].Text)
+		sentence := strings.TrimSpace(t.sentences[t.sentenceID].Text)
 		if sentence == "" {
 			t.finished = true
 			return "", false
 		}
-		t.currentSentence = t.processSentence(t.sentences[t.sentenceId].Text)
-		t.wordId = 0
+		t.currentSentence = t.processSentence(t.sentences[t.sentenceID].Text)
+		t.wordID = 0
 	}
-	return t.currentSentence[t.wordId], true
+	return t.currentSentence[t.wordID], true
 }
